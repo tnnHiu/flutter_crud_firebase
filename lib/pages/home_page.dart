@@ -6,11 +6,21 @@ import 'package:grocery_management/services/auth_service.dart';
 
 import 'components/app_product_tile.dart';
 
-class HomePage extends StatelessWidget {
-  HomePage({super.key});
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   final AppService _appService = AppService();
+
   final AuthService _authService = AuthService();
+
+  String _searchQuery = "";
+
+  bool _searchBoolean = false;
 
   void logout() {
     _authService.signOut();
@@ -20,8 +30,28 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Grocery Management"),
+        title: !_searchBoolean
+            ? const Text("Grocery Management")
+            : _buildProductSearcher(),
         actions: [
+          !_searchBoolean
+              ? IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _searchBoolean = true;
+                    });
+                  },
+                  icon: const Icon(Icons.search),
+                )
+              : IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _searchBoolean = false;
+                      _searchQuery = "";
+                    });
+                  },
+                  icon: const Icon(Icons.clear),
+                ),
           IconButton(
             onPressed: logout,
             icon: const Icon(Icons.logout),
@@ -30,7 +60,6 @@ class HomePage extends StatelessWidget {
       ),
       body: Center(
         child: _buildProductList(),
-        // child: Text("Hello"),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.cyan,
@@ -47,7 +76,7 @@ class HomePage extends StatelessWidget {
 
   Widget _buildProductList() {
     return StreamBuilder<List<Product>>(
-      stream: _appService.getProductStream(),
+      stream: _appService.getProductStream(searchQuery: _searchQuery),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return const Text("Error");
@@ -71,5 +100,20 @@ class HomePage extends StatelessWidget {
     } else {
       return Container();
     }
+  }
+
+  Widget _buildProductSearcher() {
+    return TextField(
+      autofocus: true,
+      textInputAction: TextInputAction.search,
+      decoration: const InputDecoration(
+        hintText: "Search product",
+      ),
+      onChanged: (value) {
+        setState(() {
+          _searchQuery = value;
+        });
+      },
+    );
   }
 }

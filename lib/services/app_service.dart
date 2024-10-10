@@ -14,25 +14,32 @@ class AppService {
   final ImagePicker _picker = ImagePicker();
 
   // Get product stream
-  Stream<List<Product>> getProductStream() {
+  Stream<List<Product>> getProductStream({String searchQuery = ""}) {
     return _firestore
         .where('userId', isEqualTo: _auth.currentUser?.uid)
         .snapshots()
         .map(
       (snapshot) {
-        return snapshot.docs.map(
-          (doc) {
-            final productData = doc.data() as Map<String, dynamic>;
-            return Product(
-              id: doc.id,
-              name: productData['name'],
-              category: productData['category'],
-              price: productData['price'],
-              imageUrl: productData['imageUrl'],
-              userId: _auth.currentUser!.uid,
-            );
-          },
-        ).toList();
+        return snapshot.docs
+            .map(
+              (doc) {
+                final productData = doc.data() as Map<String, dynamic>;
+                return Product(
+                  id: doc.id,
+                  name: productData['name'],
+                  category: productData['category'],
+                  price: productData['price'],
+                  imageUrl: productData['imageUrl'],
+                  userId: _auth.currentUser!.uid,
+                );
+              },
+            )
+            .where((product) =>
+                searchQuery.isEmpty ||
+                product.name.toLowerCase().contains(
+                      searchQuery.toLowerCase(),
+                    ))
+            .toList();
       },
     );
   }
